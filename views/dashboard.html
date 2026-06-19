@@ -1,0 +1,145 @@
+<!-- Dashboard View -->
+<div class="row g-4 mb-4">
+  
+  <!-- KPI Card 1: Total Spent -->
+  <div class="col-md-4">
+    <div class="card dashboard-card">
+      <div class="card-body p-4 d-flex align-items-center justify-content-between">
+        <div>
+          <h6 class="text-muted text-uppercase fw-semibold fs-7 mb-1">Total Expenses</h6>
+          <h3 class="fw-bold mb-0 text-dark">{{ totalSpent | currency }}</h3>
+        </div>
+        <div class="card-icon bg-primary bg-opacity-10 text-primary mb-0">
+          <i class="bi bi-currency-dollar"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Card 2: Total Transactions -->
+  <div class="col-md-4">
+    <div class="card dashboard-card">
+      <div class="card-body p-4 d-flex align-items-center justify-content-between">
+        <div>
+          <h6 class="text-muted text-uppercase fw-semibold fs-7 mb-1">Total Transactions</h6>
+          <h3 class="fw-bold mb-0 text-dark">{{ totalTransactions }}</h3>
+        </div>
+        <div class="card-icon bg-info bg-opacity-10 text-info mb-0">
+          <i class="bi bi-receipt"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Card 3: Highest Spending Category -->
+  <div class="col-md-4">
+    <div class="card dashboard-card">
+      <div class="card-body p-4 d-flex align-items-center justify-content-between">
+        <div>
+          <h6 class="text-muted text-uppercase fw-semibold fs-7 mb-1">Highest Spending</h6>
+          <h3 class="fw-bold mb-0 text-dark" ng-if="highestCategory !== 'None'">
+            <span class="badge-category badge-{{ highestCategory }} fs-5 py-1 px-3">
+              {{ highestCategory }}
+            </span>
+          </h3>
+          <h3 class="fw-bold mb-0 text-muted fs-5" ng-if="highestCategory === 'None'">
+            No spending yet
+          </h3>
+        </div>
+        <div class="card-icon bg-warning bg-opacity-10 text-warning mb-0">
+          <i class="bi bi-graph-up-arrow"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="row g-4">
+  
+  <!-- Left Side: Category Chart Visualizer -->
+  <div class="col-lg-6">
+    <div class="card dashboard-card h-100">
+      <div class="card-body p-4 d-flex flex-column">
+        <h4 class="fw-bold text-primary mb-3">
+          <i class="bi bi-pie-chart me-2"></i> Category Breakdown
+        </h4>
+        <p class="text-muted small mb-4">Visual representation of where your money is going.</p>
+        
+        <!-- Canvas for Chart.js rendering -->
+        <div class="flex-grow-1 position-relative" style="min-height: 280px;">
+          <canvas id="categoryPieChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Side: Budget Goals Manager -->
+  <div class="col-lg-6">
+    <div class="card dashboard-card h-100">
+      <div class="card-body p-4">
+        <h4 class="fw-bold text-primary mb-3">
+          <i class="bi bi-bullseye me-2"></i> Category Budgets
+        </h4>
+        <p class="text-muted small mb-4">Set limits for each category. Changes save automatically.</p>
+        
+        <!-- Budget list items -->
+        <div class="d-flex flex-column gap-4">
+          <div ng-repeat="category in categories" class="border-bottom pb-3 last-no-border">
+            
+            <!-- Category details & input fields -->
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="badge-category badge-{{ category }} fw-semibold">
+                {{ category }}
+              </span>
+              
+              <!-- Input box to edit category budget limits in real time -->
+              <div class="input-group input-group-sm" style="max-width: 140px;">
+                <span class="input-group-text bg-light">$</span>
+                <input type="number" 
+                       class="form-control text-end fw-semibold" 
+                       placeholder="Budget" 
+                       ng-model="budgets[category]" 
+                       ng-change="updateBudget()" 
+                       min="0" 
+                       step="10">
+              </div>
+            </div>
+
+            <!-- Spending summary sub-metrics -->
+            <div class="d-flex justify-content-between small text-muted mb-2">
+              <span>Spent: <strong class="text-dark">{{ (categoryTotals[category] || 0) | currency }}</strong></span>
+              <span>
+                Remaining: 
+                <strong ng-class="{'text-danger': isBudgetExceeded(category), 'text-success': !isBudgetExceeded(category)}">
+                  {{ getRemainingBudget(category) | currency }}
+                </strong>
+              </span>
+            </div>
+
+            <!-- Budget limit progress bar -->
+            <div class="progress" style="height: 8px;">
+               <div class="progress-bar transition-all" 
+                    role="progressbar" 
+                    ng-class="{'bg-danger': isBudgetExceeded(category), 'bg-success': !isBudgetExceeded(category)}" 
+                    ng-style="{'width': getBudgetPercentage(category) + '%'}" 
+                    aria-valuenow="{{ getBudgetPercentage(category) }}" 
+                    aria-valuemin="0" 
+                    aria-valuemax="100">
+              </div>
+            </div>
+
+            <!-- Warning Banner (displays only when spending exceeds the limit) -->
+            <div ng-if="isBudgetExceeded(category)" class="budget-warning mt-2">
+              <i class="bi bi-exclamation-triangle-fill"></i> 
+              <span>Spending exceeds budget by <strong>{{ -getRemainingBudget(category) | currency }}</strong>!</span>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>

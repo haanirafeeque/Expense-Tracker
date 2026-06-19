@@ -1,0 +1,127 @@
+<div class="row">
+  <div class="col-12">
+    
+    <!-- Filter and Search Card -->
+    <div class="card dashboard-card mb-4">
+      <div class="card-body p-4">
+        <h4 class="fw-bold mb-3 text-primary">
+          <i class="bi bi-funnel me-2"></i> Filter Expenses
+        </h4>
+        
+        <div class="row g-3">
+          <!-- Text Search Box -->
+          <div class="col-md-6">
+            <label for="searchDesc" class="form-label">Search Description</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white border-end-0 text-muted">
+                <i class="bi bi-search"></i>
+              </span>
+              <!-- Binds directly to searchQuery.description for partial matches -->
+              <input type="text" 
+                     id="searchDesc" 
+                     class="form-control border-start-0" 
+                     placeholder="Type to search..." 
+                     ng-model="searchQuery.description">
+            </div>
+          </div>
+          
+          <!-- Category Filter Box -->
+          <div class="col-md-6">
+            <label for="filterCat" class="form-label">Filter by Category</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white border-end-0 text-muted">
+                <i class="bi bi-tag"></i>
+              </span>
+              <!-- Binds to searchQuery.category. An empty string value clears the filter -->
+              <select id="filterCat" 
+                      class="form-select border-start-0" 
+                      ng-model="searchQuery.category">
+                <option value="">All Categories</option>
+                <option ng-repeat="cat in categories" value="{{cat}}">{{cat}}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+
+    <!-- Expenses Table Card -->
+    <div class="card dashboard-card">
+      <div class="card-body p-0">
+        
+        <div class="p-4 d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom">
+          <h4 class="fw-bold mb-0 text-primary">
+            <i class="bi bi-clock-history me-2"></i> Expense History
+          </h4>
+          <span class="badge bg-secondary px-3 py-2 rounded-pill fs-7">
+            Showing {{ (expenses | filter: searchQuery).length }} transaction(s)
+          </span>
+        </div>
+
+        <!-- Table container with responsive overflow -->
+        <div class="table-responsive">
+          <table class="table table-custom table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th scope="col" style="width: 40%">Description</th>
+                <th scope="col" style="width: 15%">Category</th>
+                <th scope="col" style="width: 15%">Date</th>
+                <th scope="col" style="width: 15%" class="text-end">Amount</th>
+                <th scope="col" style="width: 15%" class="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- ng-repeat loops through expenses filtered by the searchQuery object -->
+              <tr ng-repeat="expense in expenses | filter: searchQuery">
+                <!-- Description -->
+                <td class="fw-medium text-dark">{{ expense.description }}</td>
+                
+                <!-- Category Badge -->
+                <td>
+                  <span class="badge-category badge-{{ expense.category }}">
+                    {{ expense.category }}
+                  </span>
+                </td>
+                
+                <!-- Date formatted using AngularJS date filter -->
+                <td class="text-muted">{{ expense.date | date:'yyyy-MM-dd' }}</td>
+                
+                <!-- Amount formatted using AngularJS currency filter -->
+                <td class="text-end fw-semibold text-dark">{{ expense.amount | currency }}</td>
+                
+                <!-- Action Buttons -->
+                <td class="text-center">
+                  <div class="d-flex justify-content-center gap-2">
+                    <!-- Edit Button -->
+                    <button class="btn btn-outline-primary btn-sm px-2 py-1" 
+                            ng-click="editExpense(expense)" 
+                            title="Edit Expense">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <!-- Delete Button -->
+                    <button class="btn btn-outline-danger btn-sm px-2 py-1" 
+                            ng-click="deleteExpense(expense.id)" 
+                            title="Delete Expense">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              
+              <!-- Empty state message: displayed when table search yields no results or list is empty -->
+              <tr ng-if="(expenses | filter: searchQuery).length === 0">
+                <td colspan="5" class="text-center py-5 text-muted">
+                  <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                  No expenses found.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+    
+  </div>
+</div>

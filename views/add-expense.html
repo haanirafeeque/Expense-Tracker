@@ -1,0 +1,112 @@
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="card dashboard-card">
+      <div class="card-body p-4 p-sm-5">
+        
+        <!-- Dynamic header depending on the active state -->
+        <h3 class="card-title fw-bold text-center mb-4 text-primary">
+          <i ng-if="!isEditing" class="bi bi-plus-circle me-2"></i>
+          <i ng-if="isEditing" class="bi bi-pencil-square me-2"></i>
+          {{ isEditing ? 'Edit Expense' : 'Add New Expense' }}
+        </h3>
+        
+        <hr class="mb-4" style="opacity: 0.1;">
+
+        <!-- Form with AngularJS validation support -->
+        <!-- novalidate disables browser native popups so AngularJS validations handle the UI cleanly -->
+        <form name="expenseFormCtrl" ng-submit="expenseFormCtrl.$valid && (isEditing ? updateExpense() : addExpense())" novalidate>
+          
+          <!-- Description Input -->
+          <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <input type="text" 
+                   id="description" 
+                   name="description" 
+                   class="form-control" 
+                   placeholder="e.g. Weekly Groceries" 
+                   ng-model="expenseForm.description" 
+                   required>
+            <!-- Error validation message using ng-if -->
+            <div ng-if="(expenseFormCtrl.$submitted || expenseFormCtrl.description.$touched) && expenseFormCtrl.description.$error.required" 
+                 class="is-invalid-feedback">
+              <i class="bi bi-exclamation-circle-fill me-1"></i> Description is required.
+            </div>
+          </div>
+
+          <!-- Amount Input -->
+          <div class="mb-3">
+            <label for="amount" class="form-label">Amount ($)</label>
+            <input type="number" 
+                   id="amount" 
+                   name="amount" 
+                   class="form-control" 
+                   placeholder="0.00" 
+                   step="0.01" 
+                   min="0.01" 
+                   ng-model="expenseForm.amount" 
+                   required>
+            <!-- Error validation messages using ng-if -->
+            <div ng-if="(expenseFormCtrl.$submitted || expenseFormCtrl.amount.$touched) && expenseFormCtrl.amount.$error.required" 
+                 class="is-invalid-feedback">
+              <i class="bi bi-exclamation-circle-fill me-1"></i> Amount is required.
+            </div>
+            <div ng-if="(expenseFormCtrl.$submitted || expenseFormCtrl.amount.$touched) && expenseFormCtrl.amount.$error.min" 
+                 class="is-invalid-feedback">
+              <i class="bi bi-exclamation-circle-fill me-1"></i> Amount must be greater than 0.
+            </div>
+          </div>
+
+          <!-- Category Selection -->
+          <div class="mb-3">
+            <label for="category" class="form-label">Category</label>
+            <select id="category" 
+                    name="category" 
+                    class="form-select" 
+                    ng-model="expenseForm.category" 
+                    required>
+              <option value="" disabled selected>Select a category</option>
+              <!-- Populates dropdown with the categories array from ExpenseCtrl -->
+              <option ng-repeat="cat in categories" value="{{cat}}">{{cat}}</option>
+            </select>
+            <!-- Error validation message using ng-if -->
+            <div ng-if="(expenseFormCtrl.$submitted || expenseFormCtrl.category.$touched) && expenseFormCtrl.category.$error.required" 
+                 class="is-invalid-feedback">
+              <i class="bi bi-exclamation-circle-fill me-1"></i> Please select a category.
+            </div>
+          </div>
+
+          <!-- Date Input -->
+          <div class="mb-4">
+            <label for="date" class="form-label">Date</label>
+            <input type="date" 
+                   id="date" 
+                   name="date" 
+                   class="form-control" 
+                   ng-model="expenseForm.date" 
+                   required>
+            <!-- Error validation message using ng-if -->
+            <div ng-if="(expenseFormCtrl.$submitted || expenseFormCtrl.date.$touched) && expenseFormCtrl.date.$error.required" 
+                 class="is-invalid-feedback">
+              <i class="bi bi-exclamation-circle-fill me-1"></i> Date is required.
+            </div>
+          </div>
+
+          <!-- Actions Row -->
+          <div class="d-grid gap-2 d-sm-flex justify-content-sm-end">
+            <!-- Reset / Cancel Button -->
+            <button type="button" class="btn btn-light px-4 py-2" ng-click="resetForm(); init()">
+              <i class="bi bi-arrow-counterclockwise me-1"></i> Clear Form
+            </button>
+            
+            <!-- Submit Button (changes label dynamically) -->
+            <button type="submit" class="btn btn-primary px-4 py-2">
+              <i class="bi bi-check-circle me-1"></i> {{ isEditing ? 'Update Expense' : 'Save Expense' }}
+            </button>
+          </div>
+          
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
