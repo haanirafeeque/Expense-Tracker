@@ -1,47 +1,55 @@
 /**
- * Personal Expense Tracker - AngularJS 1.8 Application Configuration
- * 
- * This file defines the main application module and configures the routes
- * using ngRoute. It also configures a NavController to manage active menu states.
+ * app.js — Application Module & Route Configuration
+ *
+ * CONCEPT: angular.module()
+ * This creates the main AngularJS app. The name here ('ExpenseTrackerApp')
+ * must match the ng-app attribute in index.html.
+ * ['ngRoute'] means we are loading the ngRoute module so we can have
+ * multiple "pages" inside one HTML file (Single Page Application).
  */
-
-// Define the main AngularJS application module.
-// We inject 'ngRoute' to enable Single Page Application (SPA) routing.
 var app = angular.module('ExpenseTrackerApp', ['ngRoute']);
 
-// Configure the routes for the application.
-app.config(['$routeProvider', function($routeProvider) {
+
+/**
+ * CONCEPT: app.config() + $routeProvider
+ * This sets up the routes (pages) of our app.
+ * Each .when() call maps a URL path to an HTML template and a controller.
+ * The template is loaded inside the <div ng-view> in index.html.
+ */
+app.config(function($routeProvider) {
+
   $routeProvider
-    // Route for the Dashboard / Reports page
     .when('/dashboard', {
       templateUrl: 'views/dashboard.html',
       controller: 'ReportCtrl'
     })
-    // Route for the Add Expense or Edit Expense form page
     .when('/add-expense', {
       templateUrl: 'views/add-expense.html',
       controller: 'ExpenseCtrl'
     })
-    // Route for listing and filtering expenses
     .when('/view-expenses', {
       templateUrl: 'views/view-expenses.html',
       controller: 'ExpenseCtrl'
     })
-    // Fallback route: redirect to dashboard if route is not recognized
+    // If the user visits an unknown URL, send them to the dashboard
     .otherwise({
       redirectTo: '/dashboard'
     });
-}]);
 
-// NavController helps highlight the active menu item in the navbar
-app.controller('NavController', ['$scope', '$location', function($scope, $location) {
-  /**
-   * Helper function to check if a specific path is active.
-   * Compare the current location path to the target path.
-   * @param {string} viewLocation - The route path to check.
-   * @returns {boolean} True if the route is active, false otherwise.
-   */
-  $scope.isActive = function(viewLocation) {
-    return $location.path() === viewLocation;
+});
+
+
+/**
+ * CONCEPT: Controller for the navigation bar
+ * The NavController is used only in index.html to highlight the active
+ * nav link. $location is an AngularJS built-in service that reads the
+ * current URL.
+ */
+app.controller('NavController', function($scope, $location) {
+
+  // Returns true if the given path matches the current page URL
+  $scope.isActive = function(path) {
+    return $location.path() === path;
   };
-}]);
+
+});

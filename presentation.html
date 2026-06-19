@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TrackSpend — Project Presentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo: #4f46e5;
+      --indigo-dark: #3730a3;
+      --indigo-light: #818cf8;
+      --cyan: #06b6d4;
+      --emerald: #10b981;
+      --amber: #f59e0b;
+      --rose: #f43f5e;
+      --purple: #a855f7;
+      --slate-50: #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-600: #475569;
+      --slate-800: #1e293b;
+      --slate-900: #0f172a;
+      --white: #ffffff;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--slate-900);
+      overflow: hidden;
+    }
+
+    /* ── Slideshow Shell ── */
+    .deck {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 4rem;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(60px);
+      transition: opacity 0.5s cubic-bezier(0.16,1,0.3,1), transform 0.5s cubic-bezier(0.16,1,0.3,1);
+    }
+    .slide.active {
+      opacity: 1;
+      pointer-events: all;
+      transform: translateX(0);
+    }
+    .slide.exit {
+      opacity: 0;
+      transform: translateX(-60px);
+    }
+
+    /* ── Navigation ── */
+    .nav-bar {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: rgba(255,255,255,0.08);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 9999px;
+      padding: 0.6rem 1.2rem;
+      z-index: 100;
+    }
+    .nav-btn {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255,255,255,0.1);
+      color: white;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .nav-btn:hover { background: rgba(255,255,255,0.2); }
+    .slide-counter {
+      color: rgba(255,255,255,0.7);
+      font-size: 0.85rem;
+      font-weight: 500;
+      min-width: 60px;
+      text-align: center;
+    }
+    .progress-dots {
+      display: flex; gap: 6px;
+    }
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.25);
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    .dot.active {
+      background: var(--indigo-light);
+      width: 20px;
+      border-radius: 3px;
+    }
+
+    /* ── Slide 1: Title ── */
+    .slide-title {
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+    }
+    .slide-title::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 20% 40%, rgba(79,70,229,0.25) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 50% at 80% 60%, rgba(6,182,212,0.2) 0%, transparent 60%);
+    }
+    .title-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(79,70,229,0.2);
+      border: 1px solid rgba(79,70,229,0.4);
+      border-radius: 9999px;
+      padding: 0.35rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--indigo-light);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+    .title-badge .pulse {
+      width: 8px; height: 8px;
+      background: var(--emerald);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.3); }
+    }
+    .title-main {
+      font-size: clamp(3rem, 6vw, 5rem);
+      font-weight: 900;
+      color: white;
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+      text-align: center;
+      position: relative;
+      background: linear-gradient(135deg, #fff 30%, #818cf8 70%, #06b6d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1rem;
+    }
+    .title-sub {
+      font-size: clamp(1rem, 2vw, 1.3rem);
+      color: rgba(255,255,255,0.55);
+      font-weight: 400;
+      text-align: center;
+      position: relative;
+      max-width: 520px;
+      line-height: 1.6;
+      margin-bottom: 2.5rem;
+    }
+    .title-meta {
+      display: flex;
+      gap: 2rem;
+      position: relative;
+    }
+    .meta-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: rgba(255,255,255,0.6);
+      font-size: 0.875rem;
+    }
+    .meta-chip span:first-child { font-size: 1.1rem; }
+
+    /* ── Slide 2: Problem ── */
+    .slide-problem {
+      background: linear-gradient(160deg, #0f172a 0%, #1a0f2e 100%);
+    }
+    .problem-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 860px;
+      margin-top: 2rem;
+    }
+    .problem-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 1.5rem;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .problem-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(244,63,94,0.3);
+    }
+    .problem-icon {
+      font-size: 2rem;
+      flex-shrink: 0;
+    }
+    .problem-card h3 {
+      color: white;
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+    }
+    .problem-card p {
+      color: rgba(255,255,255,0.5);
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
+
+    /* ── Slide 3: Solution ── */
+    .slide-solution {
+      background: linear-gradient(160deg, #0f172a 0%, #0c1a2e 100%);
+    }
+    .solution-layout {
+      display: flex;
+      gap: 3rem;
+      align-items: center;
+      width: 100%;
+      max-width: 900px;
+      margin-top: 1.5rem;
+    }
+    .solution-text { flex: 1; }
+    .solution-text p {
+      color: rgba(255,255,255,0.65);
+      font-size: 1.05rem;
+      line-height: 1.75;
+      margin-bottom: 1.5rem;
+    }
+    .solution-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .tag {
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border: 1px solid;
+    }
+    .tag-indigo { background: rgba(79,70,229,0.15); color: #a5b4fc; border-color: rgba(79,70,229,0.3); }
+    .tag-cyan   { background: rgba(6,182,212,0.15);  color: #67e8f9; border-color: rgba(6,182,212,0.3);  }
+    .tag-emerald{ background: rgba(16,185,129,0.15); color: #6ee7b7; border-color: rgba(16,185,129,0.3); }
+    .tag-amber  { background: rgba(245,158,11,0.15); color: #fcd34d; border-color: rgba(245,158,11,0.3); }
+    .tag-purple { background: rgba(168,85,247,0.15); color: #d8b4fe; border-color: rgba(168,85,247,0.3); }
+    .solution-mockup {
+      flex: 0 0 300px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 1.5rem;
+      overflow: hidden;
+    }
+    .mock-bar {
+      display: flex;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+    .mock-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .mock-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #818cf8;
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 1.2rem;
+    }
+    .mock-kpi {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+      margin-bottom: 1rem;
+    }
+    .mock-kpi-card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      padding: 0.75rem;
+    }
+    .mock-kpi-card .label { font-size: 0.6rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.05em; }
+    .mock-kpi-card .value { font-size: 1rem; font-weight: 700; color: white; margin-top: 0.25rem; }
+    .mock-bar-chart { display: flex; flex-direction: column; gap: 0.5rem; }
+    .mock-bar-row { display: flex; align-items: center; gap: 0.6rem; font-size: 0.65rem; color: rgba(255,255,255,0.5); }
+    .mock-bar-fill { height: 8px; border-radius: 4px; flex-shrink: 0; }
+
+    /* ── Slide 4: Features ── */
+    .slide-features {
+      background: linear-gradient(160deg, #0f172a 0%, #0a1628 100%);
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.2rem;
+      width: 100%;
+      max-width: 900px;
+      margin-top: 2rem;
+    }
+    .feat-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 1.4rem;
+      transition: all 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+    .feat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--accent, var(--indigo));
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+    .feat-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.15); }
+    .feat-card:hover::before { opacity: 1; }
+    .feat-icon { font-size: 1.8rem; margin-bottom: 0.75rem; }
+    .feat-card h3 { font-size: 0.9rem; font-weight: 700; color: white; margin-bottom: 0.4rem; }
+    .feat-card p { font-size: 0.78rem; color: rgba(255,255,255,0.5); line-height: 1.5; }
+
+    /* ── Slide 5: Tech Stack ── */
+    .slide-tech {
+      background: linear-gradient(160deg, #0f172a 0%, #101827 100%);
+    }
+    .tech-layout {
+      display: flex;
+      gap: 3rem;
+      align-items: stretch;
+      width: 100%;
+      max-width: 900px;
+      margin-top: 1.5rem;
+    }
+    .tech-list { flex: 1; display: flex; flex-direction: column; gap: 1rem; }
+    .tech-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 1rem 1.2rem;
+      transition: all 0.2s;
+    }
+    .tech-item:hover { border-color: rgba(255,255,255,0.15); transform: translateX(4px); }
+    .tech-emoji { font-size: 1.6rem; flex-shrink: 0; }
+    .tech-info h4 { font-size: 0.9rem; font-weight: 600; color: white; }
+    .tech-info p  { font-size: 0.75rem; color: rgba(255,255,255,0.45); margin-top: 0.15rem; }
+    .tech-diagram {
+      flex: 0 0 260px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+    .arch-layer {
+      border-radius: 12px;
+      padding: 0.8rem 1.2rem;
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .arch-arrow { text-align: center; color: rgba(255,255,255,0.25); font-size: 1.1rem; }
+
+    /* ── Slide 6: How It Works ── */
+    .slide-flow {
+      background: linear-gradient(160deg, #0f172a 0%, #0d1f1a 100%);
+    }
+    .flow-steps {
+      display: flex;
+      align-items: flex-start;
+      gap: 0;
+      width: 100%;
+      max-width: 900px;
+      margin-top: 2rem;
+      position: relative;
+    }
+    .flow-steps::before {
+      content: '';
+      position: absolute;
+      top: 28px;
+      left: calc(14% + 28px);
+      right: calc(14% + 28px);
+      height: 2px;
+      background: linear-gradient(90deg, var(--emerald), var(--indigo), var(--cyan));
+    }
+    .flow-step {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .step-num {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: white;
+      margin-bottom: 1rem;
+      position: relative;
+      z-index: 1;
+      border: 2px solid rgba(255,255,255,0.1);
+    }
+    .flow-step h3 { font-size: 0.85rem; font-weight: 700; color: white; margin-bottom: 0.4rem; }
+    .flow-step p  { font-size: 0.72rem; color: rgba(255,255,255,0.45); line-height: 1.5; max-width: 120px; }
+
+    /* ── Slide 7: Demo ── */
+    .slide-demo {
+      background: linear-gradient(160deg, #0f172a 0%, #1a0f2e 100%);
+    }
+    .demo-screens {
+      display: flex;
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 900px;
+      margin-top: 1.5rem;
+      align-items: flex-start;
+    }
+    .screen-card {
+      flex: 1;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: transform 0.25s;
+    }
+    .screen-card:hover { transform: translateY(-6px); }
+    .screen-titlebar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .screen-titlebar .dots { display: flex; gap: 5px; }
+    .screen-titlebar .dots span { width: 8px; height: 8px; border-radius: 50%; }
+    .screen-titlebar .title { font-size: 0.7rem; color: rgba(255,255,255,0.4); margin-left: auto; margin-right: auto; }
+    .screen-content { padding: 1rem; }
+    .screen-content .sc-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: rgba(255,255,255,0.3);
+      margin-bottom: 0.5rem;
+    }
+    .sc-kpi { background: rgba(255,255,255,0.06); border-radius: 8px; padding: 0.6rem 0.8rem; margin-bottom: 0.5rem; }
+    .sc-kpi .k-val { font-size: 1.1rem; font-weight: 700; color: white; }
+    .sc-kpi .k-lbl { font-size: 0.6rem; color: rgba(255,255,255,0.4); }
+    .sc-form-field { background: rgba(255,255,255,0.06); border-radius: 6px; height: 28px; margin-bottom: 0.4rem; display: flex; align-items: center; padding: 0 0.6rem; }
+    .sc-form-field span { font-size: 0.65rem; color: rgba(255,255,255,0.3); }
+    .sc-btn { background: #4f46e5; border-radius: 6px; height: 28px; margin-top: 0.6rem; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 600; color: white; }
+    .sc-row { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.65rem; }
+    .sc-row .desc { color: rgba(255,255,255,0.7); }
+    .sc-row .amt  { color: #6ee7b7; font-weight: 600; }
+    .sc-badge { padding: 0.15rem 0.5rem; border-radius: 9999px; font-size: 0.55rem; font-weight: 600; }
+
+    /* ── Slide 8: What I Learned ── */
+    .slide-learned {
+      background: linear-gradient(160deg, #0f172a 0%, #0a1020 100%);
+    }
+    .learned-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.2rem;
+      width: 100%;
+      max-width: 800px;
+      margin-top: 2rem;
+    }
+    .learned-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px;
+      padding: 1.3rem;
+    }
+    .learned-card .num {
+      font-size: 2rem;
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 0.4rem;
+    }
+    .learned-card h3 { font-size: 0.9rem; font-weight: 700; color: white; margin-bottom: 0.35rem; }
+    .learned-card p  { font-size: 0.78rem; color: rgba(255,255,255,0.5); line-height: 1.5; }
+
+    /* ── Slide 9: Thank You ── */
+    .slide-thanks {
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+    }
+    .slide-thanks::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 50% 60% at 30% 50%, rgba(79,70,229,0.3) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 50% at 70% 50%, rgba(6,182,212,0.2) 0%, transparent 60%);
+    }
+    .thanks-emoji { font-size: 4rem; margin-bottom: 1rem; position: relative; animation: float 3s ease-in-out infinite; }
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+    .thanks-title {
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, #fff 30%, #818cf8 70%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.04em;
+      position: relative;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    .thanks-sub {
+      font-size: 1.1rem;
+      color: rgba(255,255,255,0.5);
+      text-align: center;
+      position: relative;
+      max-width: 480px;
+      line-height: 1.7;
+      margin-bottom: 2.5rem;
+    }
+    .thanks-links {
+      display: flex;
+      gap: 1rem;
+      position: relative;
+    }
+    .thanks-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.4rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .thanks-link-primary {
+      background: var(--indigo);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .thanks-link-primary:hover { background: var(--indigo-dark); transform: translateY(-2px); }
+    .thanks-link-secondary {
+      background: rgba(255,255,255,0.07);
+      color: rgba(255,255,255,0.8);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .thanks-link-secondary:hover { background: rgba(255,255,255,0.12); transform: translateY(-2px); }
+
+    /* ── Shared Heading Styles ── */
+    .slide-eyebrow {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--indigo-light);
+      margin-bottom: 0.6rem;
+    }
+    .slide-heading {
+      font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+      font-weight: 800;
+      color: white;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 0.5rem;
+    }
+    .slide-desc {
+      font-size: 0.95rem;
+      color: rgba(255,255,255,0.5);
+      max-width: 560px;
+      line-height: 1.6;
+    }
+    .text-center { text-align: center; }
+
+    /* Keyboard hint */
+    .key-hint {
+      position: fixed;
+      top: 1.5rem;
+      right: 1.5rem;
+      color: rgba(255,255,255,0.2);
+      font-size: 0.72rem;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+  <!-- ── SLIDE 1: Title ── -->
+  <div class="slide slide-title active" data-index="0">
+    <div class="title-badge"><span class="pulse"></span> Web Application Project</div>
+    <h1 class="title-main">TrackSpend</h1>
+    <p class="title-sub">A personal expense tracker that helps you understand where your money is going — simply and beautifully.</p>
+    <div class="title-meta">
+      <div class="meta-chip"><span>🌐</span><span>Web App (SPA)</span></div>
+      <div class="meta-chip"><span>🗂️</span><span>AngularJS + Bootstrap</span></div>
+      <div class="meta-chip"><span>✨</span><span>Vibecoded with AI</span></div>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 2: The Problem ── -->
+  <div class="slide slide-problem" data-index="1">
+    <div class="slide-eyebrow">The Problem</div>
+    <h2 class="slide-heading text-center">Most people don't know<br>where their money goes</h2>
+    <p class="slide-desc text-center" style="margin-bottom:0">Sound familiar? These are the most common money struggles.</p>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="problem-icon">😰</div>
+        <div>
+          <h3>No Visibility</h3>
+          <p>You spend but never track, so you're always surprised at the end of the month.</p>
+        </div>
+      </div>
+      <div class="problem-card">
+        <div class="problem-icon">📊</div>
+        <div>
+          <h3>No Budgets</h3>
+          <p>Without limits per category, overspending on food or shopping is easy to miss.</p>
+        </div>
+      </div>
+      <div class="problem-card">
+        <div class="problem-icon">📝</div>
+        <div>
+          <h3>Messy Records</h3>
+          <p>Spreadsheets are tedious. Receipts get lost. Memory is unreliable.</p>
+        </div>
+      </div>
+      <div class="problem-card">
+        <div class="problem-icon">📱</div>
+        <div>
+          <h3>Complex Apps</h3>
+          <p>Existing finance apps are overwhelming, require sign-ups, or cost money.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 3: The Solution ── -->
+  <div class="slide slide-solution" data-index="2">
+    <div class="slide-eyebrow">The Solution</div>
+    <h2 class="slide-heading">Meet TrackSpend</h2>
+    <div class="solution-layout">
+      <div class="solution-text">
+        <p>TrackSpend is a <strong style="color:white">free, browser-based</strong> expense tracker. No sign-up. No app download. Just open it and start logging your expenses.</p>
+        <p>It gives you a clear picture of your spending with charts, budget warnings, and a clean history log — all saved automatically in your browser.</p>
+        <div class="solution-tags">
+          <span class="tag tag-indigo">No sign-up needed</span>
+          <span class="tag tag-cyan">Works in browser</span>
+          <span class="tag tag-emerald">Data stays private</span>
+          <span class="tag tag-amber">100% free</span>
+          <span class="tag tag-purple">Visual insights</span>
+        </div>
+      </div>
+      <div class="solution-mockup">
+        <div class="mock-bar">
+          <div class="mock-dot" style="background:#ef4444"></div>
+          <div class="mock-dot" style="background:#f59e0b"></div>
+          <div class="mock-dot" style="background:#10b981"></div>
+        </div>
+        <div class="mock-header">💸 TrackSpend</div>
+        <div class="mock-kpi">
+          <div class="mock-kpi-card">
+            <div class="label">Total Spent</div>
+            <div class="value" style="color:#6ee7b7">$465.50</div>
+          </div>
+          <div class="mock-kpi-card">
+            <div class="label">Transactions</div>
+            <div class="value" style="color:#93c5fd">5</div>
+          </div>
+        </div>
+        <div class="mock-bar-chart">
+          <div class="mock-bar-row"><span style="width:70px">Food</span><div class="mock-bar-fill" style="width:80px;background:#f59e0b"></div><span>$85</span></div>
+          <div class="mock-bar-row"><span style="width:70px">Utilities</span><div class="mock-bar-fill" style="width:120px;background:#06b6d4"></div><span>$150</span></div>
+          <div class="mock-bar-row"><span style="width:70px">Shopping</span><div class="mock-bar-fill" style="width:96px;background:#ec4899"></div><span>$120</span></div>
+          <div class="mock-bar-row"><span style="width:70px">Transport</span><div class="mock-bar-fill" style="width:40px;background:#3b82f6"></div><span>$45</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 4: Features ── -->
+  <div class="slide slide-features" data-index="3">
+    <div class="slide-eyebrow">Features</div>
+    <h2 class="slide-heading text-center">Everything you need,<br>nothing you don't</h2>
+    <div class="features-grid">
+      <div class="feat-card" style="--accent:#4f46e5">
+        <div class="feat-icon">📊</div>
+        <h3>Live Dashboard</h3>
+        <p>See your total spending, number of transactions, and top spending category at a glance.</p>
+      </div>
+      <div class="feat-card" style="--accent:#06b6d4">
+        <div class="feat-icon">🥧</div>
+        <h3>Spending Pie Chart</h3>
+        <p>A visual chart breaks down your spending by category so you instantly see where money goes.</p>
+      </div>
+      <div class="feat-card" style="--accent:#10b981">
+        <div class="feat-icon">🎯</div>
+        <h3>Budget Goals</h3>
+        <p>Set a budget limit for each category. Progress bars and warnings alert you when you overspend.</p>
+      </div>
+      <div class="feat-card" style="--accent:#f59e0b">
+        <div class="feat-icon">➕</div>
+        <h3>Add & Edit Expenses</h3>
+        <p>Log any expense with a description, amount, category, and date. Edit or delete at any time.</p>
+      </div>
+      <div class="feat-card" style="--accent:#a855f7">
+        <div class="feat-icon">🔍</div>
+        <h3>Search & Filter</h3>
+        <p>Quickly find expenses by searching descriptions or filtering by category.</p>
+      </div>
+      <div class="feat-card" style="--accent:#ec4899">
+        <div class="feat-icon">💾</div>
+        <h3>Auto-Save</h3>
+        <p>All your data is automatically saved in the browser. Close the tab and it's still there when you return.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 5: Tech Stack ── -->
+  <div class="slide slide-tech" data-index="4">
+    <div class="slide-eyebrow">Under the Hood</div>
+    <h2 class="slide-heading">How it was built</h2>
+    <p class="slide-desc" style="margin-bottom:0">Built with beginner-friendly, widely-used web technologies.</p>
+    <div class="tech-layout">
+      <div class="tech-list">
+        <div class="tech-item">
+          <div class="tech-emoji">🅰️</div>
+          <div class="tech-info">
+            <h4>AngularJS 1.8</h4>
+            <p>JavaScript framework — handles routing and page logic</p>
+          </div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-emoji">🅱️</div>
+          <div class="tech-info">
+            <h4>Bootstrap 5</h4>
+            <p>CSS framework — makes the layout responsive and clean</p>
+          </div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-emoji">📈</div>
+          <div class="tech-info">
+            <h4>Chart.js</h4>
+            <p>JavaScript library — draws the interactive pie chart</p>
+          </div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-emoji">🗄️</div>
+          <div class="tech-info">
+            <h4>localStorage</h4>
+            <p>Built-in browser storage — saves your data automatically</p>
+          </div>
+        </div>
+      </div>
+      <div class="tech-diagram">
+        <div class="arch-layer" style="background:rgba(79,70,229,0.2);border:1px solid rgba(79,70,229,0.3);color:#a5b4fc">👤 User</div>
+        <div class="arch-arrow">↕</div>
+        <div class="arch-layer" style="background:rgba(6,182,212,0.2);border:1px solid rgba(6,182,212,0.3);color:#67e8f9">🖥️ HTML Views<br><span style="font-size:0.65rem;opacity:0.7">dashboard · add-expense · view-expenses</span></div>
+        <div class="arch-arrow">↕</div>
+        <div class="arch-layer" style="background:rgba(168,85,247,0.2);border:1px solid rgba(168,85,247,0.3);color:#d8b4fe">⚙️ AngularJS Controllers<br><span style="font-size:0.65rem;opacity:0.7">ExpenseCtrl · ReportCtrl</span></div>
+        <div class="arch-arrow">↕</div>
+        <div class="arch-layer" style="background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.3);color:#6ee7b7">💾 ExpenseService<br><span style="font-size:0.65rem;opacity:0.7">localStorage</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 6: How It Works ── -->
+  <div class="slide slide-flow" data-index="5">
+    <div class="slide-eyebrow">User Flow</div>
+    <h2 class="slide-heading text-center">How a user uses TrackSpend</h2>
+    <p class="slide-desc text-center" style="margin-bottom:0">Four simple steps from opening the app to insights.</p>
+    <div class="flow-steps">
+      <div class="flow-step">
+        <div class="step-num" style="background:linear-gradient(135deg,#10b981,#059669)">🌐</div>
+        <h3>Open App</h3>
+        <p>Open index.html in a browser — no login needed</p>
+      </div>
+      <div class="flow-step">
+        <div class="step-num" style="background:linear-gradient(135deg,#4f46e5,#7c3aed)">➕</div>
+        <h3>Add Expense</h3>
+        <p>Fill in description, amount, category, and date</p>
+      </div>
+      <div class="flow-step">
+        <div class="step-num" style="background:linear-gradient(135deg,#0891b2,#06b6d4)">🎯</div>
+        <h3>Set Budgets</h3>
+        <p>Enter your limit for each category on the dashboard</p>
+      </div>
+      <div class="flow-step">
+        <div class="step-num" style="background:linear-gradient(135deg,#f59e0b,#d97706)">📊</div>
+        <h3>View Insights</h3>
+        <p>Watch the chart and progress bars update instantly</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 7: Pages Demo ── -->
+  <div class="slide slide-demo" data-index="6">
+    <div class="slide-eyebrow">The App</div>
+    <h2 class="slide-heading text-center">3 Pages, 1 Goal</h2>
+    <div class="demo-screens">
+      <!-- Dashboard -->
+      <div class="screen-card">
+        <div class="screen-titlebar">
+          <div class="dots"><span style="background:#ef4444"></span><span style="background:#f59e0b"></span><span style="background:#10b981"></span></div>
+          <div class="title">📊 Dashboard</div>
+        </div>
+        <div class="screen-content">
+          <div class="sc-label">Overview</div>
+          <div class="sc-kpi"><div class="k-val" style="color:#6ee7b7">$465.50</div><div class="k-lbl">Total Spent</div></div>
+          <div class="sc-kpi" style="margin-top:0.4rem"><div class="k-val" style="color:#93c5fd">5 Transactions</div><div class="k-lbl">This period</div></div>
+          <div style="margin-top:0.8rem" class="sc-label">Budget Progress</div>
+          <div style="font-size:0.65rem;color:rgba(255,255,255,0.5);margin-bottom:0.25rem">Food — $85 / $200</div>
+          <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:6px;margin-bottom:0.5rem"><div style="width:42%;height:100%;background:#10b981;border-radius:4px"></div></div>
+          <div style="font-size:0.65rem;color:rgba(255,255,255,0.5);margin-bottom:0.25rem">Utilities — $150 / $100 ⚠️</div>
+          <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:6px"><div style="width:100%;height:100%;background:#ef4444;border-radius:4px"></div></div>
+        </div>
+      </div>
+      <!-- Add Expense -->
+      <div class="screen-card">
+        <div class="screen-titlebar">
+          <div class="dots"><span style="background:#ef4444"></span><span style="background:#f59e0b"></span><span style="background:#10b981"></span></div>
+          <div class="title">➕ Add Expense</div>
+        </div>
+        <div class="screen-content">
+          <div class="sc-label">New Entry</div>
+          <div class="sc-form-field" style="margin-bottom:0.4rem"><span>Description: Weekly groceries</span></div>
+          <div class="sc-form-field" style="margin-bottom:0.4rem"><span>Amount: $85.00</span></div>
+          <div class="sc-form-field" style="margin-bottom:0.4rem"><span>Category: 🍔 Food</span></div>
+          <div class="sc-form-field" style="margin-bottom:0.4rem"><span>Date: 2026-06-19</span></div>
+          <div class="sc-btn">✓ Save Expense</div>
+        </div>
+      </div>
+      <!-- View Expenses -->
+      <div class="screen-card">
+        <div class="screen-titlebar">
+          <div class="dots"><span style="background:#ef4444"></span><span style="background:#f59e0b"></span><span style="background:#10b981"></span></div>
+          <div class="title">📋 View Expenses</div>
+        </div>
+        <div class="screen-content">
+          <div class="sc-label">History</div>
+          <div class="sc-row"><span class="desc">Groceries</span><span class="sc-badge" style="background:rgba(245,158,11,0.2);color:#fcd34d">Food</span><span class="amt">$85.50</span></div>
+          <div class="sc-row"><span class="desc">Gas Station</span><span class="sc-badge" style="background:rgba(59,130,246,0.2);color:#93c5fd">Transport</span><span class="amt">$45.00</span></div>
+          <div class="sc-row"><span class="desc">Electric Bill</span><span class="sc-badge" style="background:rgba(6,182,212,0.2);color:#67e8f9">Utilities</span><span class="amt">$150.00</span></div>
+          <div class="sc-row"><span class="desc">Movie Tickets</span><span class="sc-badge" style="background:rgba(168,85,247,0.2);color:#d8b4fe">Entertainment</span><span class="amt">$30.00</span></div>
+          <div class="sc-row" style="border:none"><span class="desc">Running Shoes</span><span class="sc-badge" style="background:rgba(236,72,153,0.2);color:#f9a8d4">Shopping</span><span class="amt">$120.00</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 8: What I Learned ── -->
+  <div class="slide slide-learned" data-index="7">
+    <div class="slide-eyebrow">Takeaways</div>
+    <h2 class="slide-heading text-center">What this project taught me</h2>
+    <div class="learned-grid">
+      <div class="learned-card">
+        <div class="num" style="color:#818cf8">01</div>
+        <h3>SPA Routing</h3>
+        <p>How AngularJS loads different "pages" without ever refreshing the browser — all content is injected into one shell page.</p>
+      </div>
+      <div class="learned-card">
+        <div class="num" style="color:#67e8f9">02</div>
+        <h3>MVC Architecture</h3>
+        <p>Keeping data (Service), logic (Controller), and display (View) separate makes code easier to read and debug.</p>
+      </div>
+      <div class="learned-card">
+        <div class="num" style="color:#6ee7b7">03</div>
+        <h3>Browser Storage</h3>
+        <p>Using localStorage to persist data means users can close the app and come back without losing anything — no server needed.</p>
+      </div>
+      <div class="learned-card">
+        <div class="num" style="color:#fcd34d">04</div>
+        <h3>UI/UX Design</h3>
+        <p>Good design isn't just looks — it's about making actions clear, feedback immediate, and the experience intuitive.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 9: Thank You ── -->
+  <div class="slide slide-thanks" data-index="8">
+    <div class="thanks-emoji">💸</div>
+    <h2 class="thanks-title">Thank You!</h2>
+    <p class="thanks-sub">TrackSpend — a simple, beautiful expense tracker built to make personal finance less stressful and more visual.</p>
+    <div class="thanks-links">
+      <a class="thanks-link thanks-link-primary" href="https://github.com/haanirafeeque/Expense-Tracker" target="_blank">⭐ View on GitHub</a>
+      <a class="thanks-link thanks-link-secondary" href="index.html">🚀 Open the App</a>
+    </div>
+    <p style="color:rgba(255,255,255,0.2);font-size:0.75rem;position:relative;margin-top:2.5rem">✨ Vibecoded with Antigravity AI</p>
+  </div>
+
+</div><!-- /deck -->
+
+<!-- Navigation -->
+<div class="nav-bar">
+  <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)">←</button>
+  <div class="progress-dots" id="dots"></div>
+  <span class="slide-counter" id="counter">1 / 9</span>
+  <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">→</button>
+</div>
+<div class="key-hint">← → arrow keys to navigate</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const dotsContainer = document.getElementById('dots');
+  const counter = document.getElementById('counter');
+  let current = 0;
+
+  // Build dots
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    dotsContainer.appendChild(d);
+  });
+
+  function goTo(n) {
+    slides[current].classList.remove('active');
+    slides[current].classList.add('exit');
+    setTimeout(() => slides[current].classList.remove('exit'), 500);
+
+    current = (n + slides.length) % slides.length;
+    slides[current].classList.add('active');
+
+    document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === current));
+    counter.textContent = (current + 1) + ' / ' + slides.length;
+  }
+
+  function changeSlide(dir) { goTo(current + dir); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') changeSlide(1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   changeSlide(-1);
+  });
+</script>
+</body>
+</html>

@@ -1,93 +1,104 @@
 /**
- * ExpenseCtrl
- * 
- * Handles the logic for managing expenses: listing, adding, editing, and deleting.
- * It coordinates data updates between the View templates and the ExpenseService.
+ * ExpenseCtrl.js — Controller for Add Expense & View Expenses pages
+ *
+ * CONCEPT: app.controller()
+ * A controller connects the View (HTML) and the Service (data).
+ * $scope is the "glue" — any variable or function put on $scope
+ * becomes available inside the HTML template using {{ }} or ng-*.
+ *
+ * Dependency Injection: AngularJS reads the parameter names
+ * ($scope, $location, ExpenseService) and automatically provides
+ * the right objects — we never create them manually.
  */
-app.controller('ExpenseCtrl', ['$scope', '$location', 'ExpenseService', function($scope, $location, ExpenseService) {
-  
-  // Available expense categories
+app.controller('ExpenseCtrl', function($scope, $location, ExpenseService) {
+
+  // ── Scope Variables ───────────────────────────────────────────
+
+  // The list of all expense categories shown in the dropdown
   $scope.categories = ['Food', 'Transport', 'Entertainment', 'Utilities', 'Shopping', 'Other'];
-  
-  // Load expenses array to display in the list table
+
+  // The expenses array — bound directly to the service's array.
+  // When the service adds/deletes items, this updates automatically.
   $scope.expenses = ExpenseService.getExpenses();
 
-  /**
-   * Initialize Controller State
-   * Checks if we are in Edit Mode or Add Mode by inspecting the Service's active edit reference.
-   */
-  $scope.init = function() {
-    if (ExpenseService.activeEditExpense !== null) {
-      // Edit mode: Load the expense data into the form.
-      // We use angular.copy to prevent updating the list in real-time before clicking save.
-      $scope.expenseForm = angular.copy(ExpenseService.activeEditExpense);
-      
-      // Ensure the date is a valid Javascript Date object for the HTML5 date input
-      if ($scope.expenseForm.date) {
-        $scope.expenseForm.date = new Date($scope.expenseForm.date);
-      }
-      $scope.isEditing = true;
-    } else {
-      // Add mode: Reset form to empty fields
-      $scope.resetForm();
-      $scope.isEditing = false;
-    }
-  };
+  // Tracks whether the form is in "Edit" or "Add" mode
+  $scope.isEditing = false;
 
-  /**
-   * Reset form values to default blank states.
-   */
-  $scope.resetForm = function() {
+  // The object bound to the form fields using ng-model
+  $scope.expenseForm = {};
+
+  // Object used by ng-repeat filter in view-expenses.html
+  // { description: '...', category: '...' } — matches both fields at once
+  $scope.searchQuery = {};
+
+
+  // ── Form Initialisation ───────────────────────────────────────
+
+  // Check if the user clicked "Edit" on an expense.
+  // If yes, pre-fill the form; if no, start with a blank form.
+  if (ExpenseService.activeEditExpense !== null) {
+
+    // CONCEPT: angular.copy()
+    // We copy the object so edits in the form don't instantly change
+    // the table — the change only saves when the user clicks Update.
+    $scope.expenseForm = angular.copy(ExpenseService.activeEditExpense);
+    $scope.expenseForm.date = new Date($scope.expenseForm.date);
+    $scope.isEditing = true;
+
+  } else {
+
+    // Blank form with today's date pre-filled
     $scope.expenseForm = {
       description: '',
-      amount: null,
-      category: '',
-      date: new Date() // Pre-fills with today's date
+      amount:      null,
+      category:    '',
+      date:        new Date()
     };
-    
-    // Clear the edit state in service
-    ExpenseService.activeEditExpense = null;
     $scope.isEditing = false;
-  };
+
+  }
+
+
+  // ── Form Actions ──────────────────────────────────────────────
 
   /**
-   * Submit handler for adding a new expense.
+   * Called when the user submits the Add Expense form.
+   *
+   * CONCEPT: Form Validation
+   * The HTML form uses 'required', 'min', etc. attributes.
+   * We also do a manual check here as a second layer of safety.
    */
   $scope.addExpense = function() {
-    // Perform simple validation check
-    if (!$scope.expenseForm.description || !$scope.expenseForm.amount || !$scope.expenseForm.category || !$scope.expenseForm.date) {
-      return; // Stop submission if fields are missing
+
+    // Manual validation — stop if any required field is empty
+    if (!$scope.expenseForm.description ||
+        !$scope.expenseForm.amount      ||
+        !$scope.expenseForm.category    ||
+        !$scope.expenseForm.date) {
+      return;
     }
 
     if ($scope.expenseForm.amount <= 0) {
-      return; // Amount must be greater than zero
+      return;
     }
 
-    // Call service to save the expense
+    // Send a copy to the service so the form object stays clean
     ExpenseService.addExpense(angular.copy($scope.expenseForm));
-    
-    // Reset the form and redirect to history log
+
+    // Reset the form and go to the expense list
     $scope.resetForm();
     $location.path('/view-expenses');
   };
 
   /**
-   * Pre-populates the service state and redirects user to form page.
-   * @param {Object} expense - The expense item to edit.
-   */
-  $scope.editExpense = function(expense) {
-    // Save current selection to service
-    ExpenseService.activeEditExpense = expense;
-    // Redirect to the form route
-    $location.path('/add-expense');
-  };
-
-  /**
-   * Submit handler for updating an existing expense.
+   * Called when the user submits the Edit Expense form.
    */
   $scope.updateExpense = function() {
-    // Perform validation check
-    if (!$scope.expenseForm.description || !$scope.expenseForm.amount || !$scope.expenseForm.category || !$scope.expenseForm.date) {
+
+    if (!$scope.expenseForm.description ||
+        !$scope.expenseForm.amount      ||
+        !$scope.expenseForm.category    ||
+        !$scope.expenseForm.date) {
       return;
     }
 
@@ -95,31 +106,48 @@ app.controller('ExpenseCtrl', ['$scope', '$location', 'ExpenseService', function
       return;
     }
 
-    // Call service to update the array
     ExpenseService.updateExpense(angular.copy($scope.expenseForm));
-    
-    // Clear active editing state
+
+    // Clear the edit state and go back to the list
     ExpenseService.activeEditExpense = null;
     $scope.isEditing = false;
-    
-    // Redirect back to view history
     $location.path('/view-expenses');
   };
 
   /**
-   * Delete an expense by ID and reload the controller list.
-   * @param {number} id - Unique expense ID.
+   * Called when the user clicks the Edit button on an expense row.
+   * Stores the selected expense in the service, then navigates to
+   * the form page. The form reads activeEditExpense on load (above).
+   */
+  $scope.editExpense = function(expense) {
+    ExpenseService.activeEditExpense = expense;
+    $location.path('/add-expense');
+  };
+
+  /**
+   * Delete an expense by its ID.
+   * confirm() shows a browser dialog — if the user clicks OK it returns true.
    */
   $scope.deleteExpense = function(id) {
-    // Confirm delete for user safety (highly rated in academic presentations)
     if (confirm('Are you sure you want to delete this expense?')) {
       ExpenseService.deleteExpense(id);
-      // $scope.expenses is a direct reference to the service array;
-      // the splice in ExpenseService mutates it in-place, so AngularJS
-      // will automatically reflect the change in the view.
+      // No need to refresh — $scope.expenses is the same array reference,
+      // and splice() already removed the item from it.
     }
   };
 
-  // Run the initialization logic
-  $scope.init();
-}]);
+  /**
+   * Reset the form back to blank fields.
+   */
+  $scope.resetForm = function() {
+    $scope.expenseForm = {
+      description: '',
+      amount:      null,
+      category:    '',
+      date:        new Date()
+    };
+    ExpenseService.activeEditExpense = null;
+    $scope.isEditing = false;
+  };
+
+});

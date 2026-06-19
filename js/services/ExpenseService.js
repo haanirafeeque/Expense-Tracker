@@ -1,133 +1,136 @@
 /**
- * ExpenseService
- * 
- * A service that manages the storage of expenses and category budgets in localStorage.
- * It provides functions to add, edit, update, delete expenses, and track category budgets.
+ * ExpenseService.js — Data Management Service
+ *
+ * CONCEPT: app.service()
+ * A service is a singleton object shared across controllers.
+ * Instead of each controller managing its own data, we put all
+ * data logic here in one place. Controllers ask the service for
+ * data using dependency injection.
+ *
+ * Why a service?
+ *   - Data is shared between controllers (e.g. adding an expense
+ *     in ExpenseCtrl makes it visible in ReportCtrl)
+ *   - One place to update if logic changes
  */
 app.service('ExpenseService', function() {
-  // Key names for localStorage
-  var EXPENSES_STORAGE_KEY = 'expense_tracker_expenses';
-  var BUDGETS_STORAGE_KEY = 'expense_tracker_budgets';
 
-  // Holds the expense object that is currently selected for editing across views
-  this.activeEditExpense = null;
+  // ── Storage Keys ──────────────────────────────────────────────
+  var EXPENSES_KEY = 'expense_tracker_expenses';
+  var BUDGETS_KEY  = 'expense_tracker_budgets';
 
-  // Load expenses from localStorage or initialize with seed data if empty
+  // ── Load data from localStorage (or use seed data on first run) ──
+
   var expenses = [];
-  var storedExpenses = localStorage.getItem(EXPENSES_STORAGE_KEY);
-  
-  if (storedExpenses) {
-    expenses = JSON.parse(storedExpenses);
-    // Convert date strings back to JavaScript Date objects for form handling
-    expenses.forEach(function(item) {
-      if (item.date) {
-        item.date = new Date(item.date);
-      }
+
+  var saved = localStorage.getItem(EXPENSES_KEY);
+  if (saved) {
+    // Parse the JSON string back into a JavaScript array
+    expenses = JSON.parse(saved);
+
+    // Dates are saved as strings in JSON — convert them back to Date objects
+    expenses.forEach(function(expense) {
+      expense.date = new Date(expense.date);
     });
+
   } else {
-    // Seed data: helps students present the app instantly with visual charts
-    var today = new Date();
-    var yesterday = new Date();
-    yesterday.setDate(today.getDate() - 1);
-    var lastWeek = new Date();
-    lastWeek.setDate(today.getDate() - 5);
+    // First time running the app — load some sample data
+    var today     = new Date();
+    var yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
+    var lastWeek  = new Date(); lastWeek.setDate(today.getDate() - 5);
 
     expenses = [
-      { id: 1, description: 'Groceries at Walmart', amount: 85.50, category: 'Food', date: yesterday },
-      { id: 2, description: 'Gas Station fill up', amount: 45.00, category: 'Transport', date: today },
-      { id: 3, description: 'Electric Bill', amount: 150.00, category: 'Utilities', date: lastWeek },
-      { id: 4, description: 'Movie Tickets', amount: 30.00, category: 'Entertainment', date: yesterday },
-      { id: 5, description: 'New Running Shoes', amount: 120.00, category: 'Shopping', date: lastWeek }
+      { id: 1, description: 'Groceries at Walmart', amount: 85.50,  category: 'Food',          date: yesterday },
+      { id: 2, description: 'Gas Station fill up',  amount: 45.00,  category: 'Transport',     date: today     },
+      { id: 3, description: 'Electric Bill',        amount: 150.00, category: 'Utilities',     date: lastWeek  },
+      { id: 4, description: 'Movie Tickets',        amount: 30.00,  category: 'Entertainment', date: yesterday },
+      { id: 5, description: 'New Running Shoes',    amount: 120.00, category: 'Shopping',      date: lastWeek  }
     ];
-    // Save these seed expenses to storage
-    localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
+
+    localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses));
   }
 
-  // Load budgets from localStorage or initialize with defaults if empty
+  // ── Budget limits per category ────────────────────────────────
+
   var budgets = {};
-  var storedBudgets = localStorage.getItem(BUDGETS_STORAGE_KEY);
-  
-  if (storedBudgets) {
-    budgets = JSON.parse(storedBudgets);
+
+  var savedBudgets = localStorage.getItem(BUDGETS_KEY);
+  if (savedBudgets) {
+    budgets = JSON.parse(savedBudgets);
   } else {
-    // Seed budgets for each default category
     budgets = {
-      'Food': 200,
-      'Transport': 100,
+      'Food':          200,
+      'Transport':     100,
       'Entertainment': 150,
-      'Utilities': 250,
-      'Shopping': 200,
-      'Other': 100
+      'Utilities':     250,
+      'Shopping':      200,
+      'Other':         100
     };
-    localStorage.setItem(BUDGETS_STORAGE_KEY, JSON.stringify(budgets));
+    localStorage.setItem(BUDGETS_KEY, JSON.stringify(budgets));
   }
 
-  /**
-   * Save the current expenses array to localStorage.
-   */
-  var saveExpensesToStorage = function() {
-    localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
-  };
+  // ── Helper: save expenses array to localStorage ───────────────
+  function saveExpenses() {
+    localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses));
+  }
+
+  // ── This variable lets ExpenseCtrl pass an expense to edit ────
+  // When the user clicks "Edit" we store the expense here,
+  // then the add-expense form reads it on load.
+  this.activeEditExpense = null;
+
+
+  // ── Public Methods (called by controllers) ────────────────────
 
   /**
-   * Get all expenses.
-   * @returns {Array} List of all expenses.
+   * Return the full list of expenses.
+   * Controllers bind $scope.expenses to this array directly,
+   * so any changes here automatically update the view.
    */
   this.getExpenses = function() {
     return expenses;
   };
 
   /**
-   * Add a new expense.
-   * @param {Object} expense - The expense object (description, amount, category, date).
+   * Add a new expense to the list and save it.
    */
   this.addExpense = function(expense) {
-    // Assign a unique ID using the current timestamp
-    expense.id = Date.now();
-    // Ensure amount is float/number type
+    expense.id     = Date.now();             // Unique ID using timestamp
     expense.amount = parseFloat(expense.amount);
-    
-    // Add to the runtime array and persist
     expenses.push(expense);
-    saveExpensesToStorage();
+    saveExpenses();
   };
 
   /**
-   * Update an existing expense.
-   * @param {Object} updatedExpense - The updated expense object with an existing ID.
+   * Find an expense by ID and replace it with the updated version.
    */
   this.updateExpense = function(updatedExpense) {
-    // Search the array for the expense with the matching ID
     for (var i = 0; i < expenses.length; i++) {
       if (expenses[i].id === updatedExpense.id) {
-        expenses[i] = updatedExpense;
+        expenses[i]        = updatedExpense;
         expenses[i].amount = parseFloat(updatedExpense.amount);
         break;
       }
     }
-    saveExpensesToStorage();
+    saveExpenses();
   };
 
   /**
-   * Delete an expense by ID.
-   * @param {number} id - The unique ID of the expense to delete.
+   * Remove an expense from the list by its ID.
+   * We use splice() to remove in-place so controllers holding
+   * a reference to this array see the change immediately.
    */
   this.deleteExpense = function(id) {
-    // Find and splice out the expense that matches the provided ID.
-    // We mutate in-place (splice) instead of reassigning (filter) so that
-    // controllers which hold a direct reference to this array stay in sync.
     for (var i = 0; i < expenses.length; i++) {
       if (expenses[i].id === id) {
         expenses.splice(i, 1);
         break;
       }
     }
-    saveExpensesToStorage();
+    saveExpenses();
   };
 
   /**
-   * Calculate the total spent across all expenses.
-   * @returns {number} The sum of all expense amounts.
+   * Add up all expense amounts and return the total.
    */
   this.getTotalSpent = function() {
     var total = 0;
@@ -138,19 +141,18 @@ app.service('ExpenseService', function() {
   };
 
   /**
-   * Get category budgets object.
-   * @returns {Object} Key-value pairs of category names and budget limits.
+   * Return the budget limits object.
    */
   this.getBudgets = function() {
     return budgets;
   };
 
   /**
-   * Save category budgets to storage.
-   * @param {Object} newBudgets - The updated budgets object.
+   * Save updated budget limits.
    */
   this.saveBudgets = function(newBudgets) {
     budgets = newBudgets;
-    localStorage.setItem(BUDGETS_STORAGE_KEY, JSON.stringify(budgets));
+    localStorage.setItem(BUDGETS_KEY, JSON.stringify(budgets));
   };
+
 });

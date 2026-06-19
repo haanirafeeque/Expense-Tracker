@@ -1,176 +1,150 @@
 /**
- * ReportCtrl
- * 
- * Handles the dashboard analytics, category summary calculations,
- * category budgets, and renders the Chart.js Pie Chart.
+ * ReportCtrl.js — Controller for the Dashboard page
+ *
+ * This controller handles all the calculations shown on the dashboard:
+ *   - Total money spent
+ *   - Number of transactions
+ *   - Highest spending category
+ *   - Per-category totals (for budget bars and the pie chart)
+ *
+ * CONCEPT: $timeout
+ * Chart.js needs the <canvas> element to exist in the DOM before it
+ * can draw on it. $timeout delays our chart code by 100ms, giving
+ * AngularJS time to finish rendering the HTML first.
  */
-app.controller('ReportCtrl', ['$scope', '$timeout', 'ExpenseService', function($scope, $timeout, ExpenseService) {
-  
-  // Define active category list
-  $scope.categories = ['Food', 'Transport', 'Entertainment', 'Utilities', 'Shopping', 'Other'];
-  
-  // Variables to hold calculations
-  $scope.totalSpent = 0;
+app.controller('ReportCtrl', function($scope, $timeout, ExpenseService) {
+
+  // ── Scope Variables ───────────────────────────────────────────
+
+  $scope.categories      = ['Food', 'Transport', 'Entertainment', 'Utilities', 'Shopping', 'Other'];
+  $scope.totalSpent      = 0;
   $scope.totalTransactions = 0;
   $scope.highestCategory = 'None';
-  $scope.categoryTotals = {};
-  $scope.budgets = {};
+  $scope.categoryTotals  = {};   // e.g. { Food: 85.50, Transport: 45.00, ... }
+  $scope.budgets         = {};   // e.g. { Food: 200, Transport: 100, ... }
 
-  // Holds reference to the Chart.js instance to destroy it on reload
-  var categoryChart = null;
 
-  /**
-   * Run calculations and load data from ExpenseService.
-   */
-  $scope.calculateDashboard = function() {
-    var expenses = ExpenseService.getExpenses();
-    $scope.totalSpent = ExpenseService.getTotalSpent();
-    $scope.totalTransactions = expenses.length;
-    $scope.budgets = ExpenseService.getBudgets();
+  // ── Step 1: Calculate Summary Numbers ────────────────────────
 
-    // 1. Reset category totals to 0
-    $scope.categories.forEach(function(category) {
-      $scope.categoryTotals[category] = 0;
-    });
+  var expenses = ExpenseService.getExpenses();
 
-    // 2. Loop through all expenses and sum them up by category
-    expenses.forEach(function(expense) {
-      if ($scope.categoryTotals[expense.category] !== undefined) {
-        $scope.categoryTotals[expense.category] += expense.amount;
-      }
-    });
+  $scope.totalSpent        = ExpenseService.getTotalSpent();
+  $scope.totalTransactions = expenses.length;
+  $scope.budgets           = ExpenseService.getBudgets();
 
-    // 3. Find the category with the highest spending
-    var maxAmount = 0;
-    var highest = 'None';
-    $scope.categories.forEach(function(category) {
-      var amount = $scope.categoryTotals[category];
-      if (amount > maxAmount) {
-        maxAmount = amount;
-        highest = category;
-      }
-    });
-    
-    // Set to 'None' if no spending has occurred
-    $scope.highestCategory = maxAmount > 0 ? highest : 'None';
-  };
+  // Initialise every category total to zero
+  $scope.categories.forEach(function(category) {
+    $scope.categoryTotals[category] = 0;
+  });
+
+  // Loop through all expenses and add each amount to its category
+  expenses.forEach(function(expense) {
+    if ($scope.categoryTotals[expense.category] !== undefined) {
+      $scope.categoryTotals[expense.category] += expense.amount;
+    }
+  });
+
+  // Find which category has the highest spending
+  var maxAmount = 0;
+  $scope.categories.forEach(function(category) {
+    if ($scope.categoryTotals[category] > maxAmount) {
+      maxAmount = $scope.categoryTotals[category];
+      $scope.highestCategory = category;
+    }
+  });
+
+  if (maxAmount === 0) {
+    $scope.highestCategory = 'None';
+  }
+
+
+  // ── Step 2: Budget Helper Functions ──────────────────────────
 
   /**
-   * Saves the budget for a specific category.
-   * Triggered on user input change.
-   */
-  $scope.updateBudget = function() {
-    // Save updated budget list back to service
-    ExpenseService.saveBudgets($scope.budgets);
-  };
-
-  /**
-   * Check if spending in a category exceeds its assigned budget.
-   * @param {string} category - The category to check.
-   * @returns {boolean} True if budget exceeded, false otherwise.
+   * Returns true if spending in this category is over the set budget.
+   * Used in the HTML with ng-class to turn the progress bar red.
    */
   $scope.isBudgetExceeded = function(category) {
-    var spent = $scope.categoryTotals[category] || 0;
+    var spent  = $scope.categoryTotals[category] || 0;
     var budget = $scope.budgets[category] || 0;
     return spent > budget;
   };
 
   /**
-   * Calculates the percentage of budget spent (capped at 100%).
-   * @param {string} category - The category name.
-   * @returns {number} The spent percentage (0 to 100).
+   * Returns what percentage of the budget has been spent (max 100%).
+   * Used to set the width of the Bootstrap progress bar.
+   *
+   * CONCEPT: AngularJS filter in controller
+   * The HTML uses | currency and | date filters. Here we do the
+   * percentage maths ourselves and return a plain number.
    */
   $scope.getBudgetPercentage = function(category) {
     var budget = $scope.budgets[category] || 0;
     if (budget <= 0) return 0;
-    var spent = $scope.categoryTotals[category] || 0;
+    var spent   = $scope.categoryTotals[category] || 0;
     var percent = (spent / budget) * 100;
     return Math.min(100, Math.round(percent));
   };
 
   /**
-   * Calculates the remaining budget for a category.
-   * @param {string} category - The category name.
-   * @returns {number} The remaining amount (can be negative if exceeded).
+   * Returns how much budget is left (can be negative if exceeded).
+   * The HTML uses the | currency filter to format this as $0.00.
    */
   $scope.getRemainingBudget = function(category) {
     var budget = $scope.budgets[category] || 0;
-    var spent = $scope.categoryTotals[category] || 0;
+    var spent  = $scope.categoryTotals[category] || 0;
     return budget - spent;
   };
 
   /**
-   * Initialize or update the Chart.js Pie Chart.
+   * Called when the user types a new budget amount.
+   * ng-change in the HTML triggers this automatically.
    */
-  $scope.renderChart = function() {
-    // Wait for AngularJS compilation to complete and canvas to mount in DOM
-    $timeout(function() {
-      var canvas = document.getElementById('categoryPieChart');
-      if (!canvas) return;
-
-      var ctx = canvas.getContext('2d');
-      
-      // If a chart already exists, destroy it before creating a new one to prevent overlay bugs
-      if (categoryChart !== null) {
-        categoryChart.destroy();
-      }
-
-      // Collect data arrays for chart input
-      var chartData = [];
-      $scope.categories.forEach(function(category) {
-        chartData.push($scope.categoryTotals[category]);
-      });
-
-      // Colors matching our badges
-      var chartColors = [
-        '#f59e0b', // Food - Amber
-        '#3b82f6', // Transport - Blue
-        '#a855f7', // Entertainment - Purple
-        '#06b6d4', // Utilities - Cyan
-        '#ec4899', // Shopping - Pink
-        '#64748b'  // Other - Slate
-      ];
-
-      // Create new Pie Chart instance
-      categoryChart = new Chart(ctx, {
-        type: 'pie',
-        data: {
-          labels: $scope.categories,
-          datasets: [{
-            data: chartData,
-            backgroundColor: chartColors,
-            borderColor: '#ffffff',
-            borderWidth: 2
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: {
-                font: {
-                  family: "'Inter', sans-serif",
-                  size: 12
-                },
-                padding: 15
-              }
-            }
-          }
-        }
-      });
-    }, 100);
+  $scope.updateBudget = function() {
+    ExpenseService.saveBudgets($scope.budgets);
   };
+
+
+  // ── Step 3: Draw the Pie Chart ────────────────────────────────
 
   /**
-   * Controller Entry Point
+   * CONCEPT: $timeout
+   * We wait 100ms before running Chart.js so that AngularJS has
+   * finished rendering the <canvas> element in the DOM.
    */
-  $scope.init = function() {
-    $scope.calculateDashboard();
-    $scope.renderChart();
-  };
+  $timeout(function() {
 
-  // Run initial calculations and render
-  $scope.init();
-}]);
+    var canvas = document.getElementById('categoryPieChart');
+    if (!canvas) return;
+
+    var ctx = canvas.getContext('2d');
+
+    // Build data arrays from our categoryTotals object
+    var chartLabels = $scope.categories;
+    var chartData   = $scope.categories.map(function(cat) {
+      return $scope.categoryTotals[cat];
+    });
+
+    new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: chartLabels,
+        datasets: [{
+          data:            chartData,
+          backgroundColor: ['#f59e0b', '#3b82f6', '#a855f7', '#06b6d4', '#ec4899', '#64748b'],
+          borderColor:     '#ffffff',
+          borderWidth:     2
+        }]
+      },
+      options: {
+        responsive:          true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom' }
+        }
+      }
+    });
+
+  }, 100);
+
+});
