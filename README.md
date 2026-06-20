@@ -84,4 +84,4 @@ Then open `http://localhost:8080` in your browser.
 
 ---
 
-*Vibecoded with ❤️ using Antigravity AI*
+*Vibecoded  using Antigravity AI*
