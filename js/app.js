@@ -1,23 +1,16 @@
-// Create the AngularJS app. The name must match ng-app in index.html.
-// 'ngRoute' allows us to show different pages without reloading the browser.
+// Create the app. Name must match ng-app="ExpenseTrackerApp" in index.html
 var app = angular.module('ExpenseTrackerApp', ['ngRoute']);
 
-// Define which controller and HTML file to use for each URL path
+// Map each URL path to an HTML template and a controller
 app.config(function($routeProvider) {
   $routeProvider
     .when('/dashboard',     { templateUrl: 'views/dashboard.html',     controller: 'ReportCtrl'  })
     .when('/add-expense',   { templateUrl: 'views/add-expense.html',   controller: 'ExpenseCtrl' })
     .when('/view-expenses', { templateUrl: 'views/view-expenses.html', controller: 'ExpenseCtrl' })
-    .otherwise({ redirectTo: '/dashboard' }); // Unknown URL → go to dashboard
+    .otherwise({ redirectTo: '/dashboard' });
 });
 
-// NavController: highlights the active link in the navigation bar
+// Highlights the active nav link using $location.path()
 app.controller('NavController', function($scope, $location) {
-
-  // Returns true if the given path matches the current page URL
-  // Used in the HTML like: ng-class="{'active-link': isActive('/dashboard')}"
-  $scope.isActive = function(path) {
-    return $location.path() === path;
-  };
-
+  $scope.isActive = function(path) { return $location.path() === path; };
 });
